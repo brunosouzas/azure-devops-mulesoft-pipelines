@@ -28,6 +28,15 @@ jobs:
       git config user.name "Azure Pipelines"
       git config user.email "azure-pipelines@users.noreply.github.com"
 
+      # The checkout stores the token for the exact remote URL; the release plugin pushes to
+      # the <scm> URL from the pom (often with .git), which Git treats as a different URL.
+      # Scope the same header to the whole host so any URL of this repository can push.
+      header=$(git config --get-regexp '^http\..*\.extraheader$' | head -1 | cut -d' ' -f2- || true)
+      host=$(git remote get-url origin | sed -E 's#^(https://[^/]+/).*#\1#')
+      if [[ -n "$header" && "$host" == https://* ]]; then
+        git config "http.${host}.extraheader" "$header"
+      fi
+
       current=$(mvn $(MAVEN_ARGS) -q help:evaluate -Dexpression=project.version -DforceStdout)
       release="${current%-SNAPSHOT}"
       IFS=. read -r major minor patch <<< "$release"
