@@ -44,3 +44,23 @@ jobs:
             APP_VERSION: ${{ parameters.appVersion }}
             ANYPOINT_CLIENT_ID: $(ANYPOINT_CLIENT_ID)
             ANYPOINT_CLIENT_SECRET: $(ANYPOINT_CLIENT_SECRET)
+
+        # Smoke test: the deployment only counts when the new app answers from the right environment.
+        # Skipped when deployment/<env>.yaml has no healthUrl.
+        - bash: |
+            set -euo pipefail
+            url=$(yq -r '.healthUrl // ""' "deployment/${ANYPOINT_ENV}.yaml")
+            if [[ -z "$url" ]]; then echo "No healthUrl for ${ANYPOINT_ENV}; skipping"; exit 0; fi
+            for attempt in $(seq 1 20); do
+              body=$(curl -fsS -m 10 "$url" || true)
+              status=$(echo "$body" | jq -r '.status // empty' 2>/dev/null || true)
+              env=$(echo "$body" | jq -r '.environment // empty' 2>/dev/null || true)
+              if [[ "$status" == "UP" && "$env" == "${ANYPOINT_ENV}" ]]; then
+                echo "Healthy: $body"; exit 0
+              fi
+              echo "Attempt $attempt: not ready yet (${body:-no response})"; sleep 15
+            done
+            echo "##vso[task.logissue type=error]${url} did not report UP for ${ANYPOINT_ENV}"; exit 1
+          displayName: Smoke test ${{ parameters.anypointEnvironment }}
+          env:
+            ANYPOINT_ENV: ${{ parameters.anypointEnvironment }}

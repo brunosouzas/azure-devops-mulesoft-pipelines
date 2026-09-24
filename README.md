@@ -36,7 +36,7 @@ resources:
     type: github
     endpoint: <your GitHub service connection>
     name: brunosouzas/azure-devops-mulesoft-pipelines
-    ref: refs/tags/v1.0.0
+    ref: refs/tags/v1.1.0
 
 extends:
   template: templates/stages/gitflow.yml@templates
@@ -49,7 +49,7 @@ The application needs:
 - `groupId` set to the Anypoint organization ID, and `distributionManagement` pointing to Exchange;
 - the `maven-release-plugin` with `tagNameFormat` `v@{project.version}` and `scmCommentPrefix` starting with `[skip ci]`;
 - a `cloudhub2Deployment` block reading `deploy.*` properties;
-- `deployment/<env>.yaml` for each environment.
+- `deployment/<env>.yaml` for each environment, optionally with a `healthUrl` for the post-deployment smoke test.
 
 The reference application has all of them.
 
