@@ -1,0 +1,44 @@
+# Java 17, Maven cache and a settings.xml with Anypoint Exchange credentials.
+# The settings file is written at runtime from secret variables and never committed.
+parameters:
+- name: settingsPath
+  type: string
+  default: $(Agent.TempDirectory)/settings.xml
+
+steps:
+- task: JavaToolInstaller@0
+  displayName: Java 17
+  inputs:
+    versionSpec: '17'
+    jdkArchitectureOption: x64
+    jdkSourceOption: PreInstalled
+
+- task: Cache@2
+  displayName: Maven cache
+  inputs:
+    key: 'maven | "$(Agent.OS)" | **/pom.xml'
+    restoreKeys: |
+      maven | "$(Agent.OS)"
+    path: $(Pipeline.Workspace)/.m2/repository
+
+- bash: |
+    set -euo pipefail
+    cat > "${SETTINGS_PATH}" <<XML
+    <settings>
+      <servers>
+        <server>
+          <id>anypoint-exchange-v3</id>
+          <username>~~~Client~~~</username>
+          <password>${ANYPOINT_CLIENT_ID}~?~${ANYPOINT_CLIENT_SECRET}</password>
+        </server>
+      </servers>
+    </settings>
+    XML
+    echo "##vso[task.setvariable variable=MAVEN_SETTINGS]${SETTINGS_PATH}"
+    echo "##vso[task.setvariable variable=MAVEN_ARGS]-B -s ${SETTINGS_PATH} -Dmaven.repo.local=$(Pipeline.Workspace)/.m2/repository -Danypoint.orgId=${ANYPOINT_ORG_ID}"
+  displayName: Maven settings (Exchange credentials)
+  env:
+    SETTINGS_PATH: ${{ parameters.settingsPath }}
+    ANYPOINT_ORG_ID: $(ANYPOINT_ORG_ID)
+    ANYPOINT_CLIENT_ID: $(ANYPOINT_CLIENT_ID)
+    ANYPOINT_CLIENT_SECRET: $(ANYPOINT_CLIENT_SECRET)

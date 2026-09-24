@@ -1,0 +1,46 @@
+# Deploy a version that is already in Exchange to CloudHub 2.0, without rebuilding it.
+# The Azure DevOps environment carries the approvals and checks (e.g. prod needs approval).
+parameters:
+- name: pool
+  type: object
+  default: { vmImage: ubuntu-latest }
+- name: environment        # Azure DevOps environment (approvals live here)
+  type: string
+- name: anypointEnvironment
+  type: string
+- name: appVersion
+  type: string
+
+jobs:
+- deployment: deploy
+  displayName: Deploy to ${{ parameters.anypointEnvironment }}
+  pool: ${{ parameters.pool }}
+  environment: ${{ parameters.environment }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - checkout: self
+        - template: ../steps/setup-maven.yml
+        - bash: |
+            set -euo pipefail
+            cfg="deployment/${ANYPOINT_ENV}.yaml"
+            [[ -f "$cfg" ]] || { echo "Missing $cfg" >&2; exit 1; }
+            y() { yq -r "$1" "$cfg"; }
+            # Pin the pom to the version being deployed so the plugin resolves it from Exchange.
+            mvn $(MAVEN_ARGS) -q versions:set -DnewVersion="${APP_VERSION}" -DgenerateBackupPoms=false
+            mvn $(MAVEN_ARGS) mule:deploy -Dmule.artifact=dummy.jar -DmuleDeploy \
+              -Ddeploy.environment="${ANYPOINT_ENV}" \
+              -Ddeploy.applicationName="$(y .applicationName)" \
+              -Ddeploy.target="$(y .target)" \
+              -Ddeploy.runtimeVersion="$(y .runtimeVersion)" \
+              -Ddeploy.replicas="$(y .replicas)" \
+              -Ddeploy.vCores="$(y .vCores)" \
+              -Ddeploy.clientId="${ANYPOINT_CLIENT_ID}" \
+              -Ddeploy.clientSecret="${ANYPOINT_CLIENT_SECRET}"
+          displayName: mule:deploy ${{ parameters.appVersion }}
+          env:
+            ANYPOINT_ENV: ${{ parameters.anypointEnvironment }}
+            APP_VERSION: ${{ parameters.appVersion }}
+            ANYPOINT_CLIENT_ID: $(ANYPOINT_CLIENT_ID)
+            ANYPOINT_CLIENT_SECRET: $(ANYPOINT_CLIENT_SECRET)

@@ -1,0 +1,51 @@
+# main: maven-release-plugin. release:prepare removes -SNAPSHOT, commits, tags v<version>
+# and moves main to the next -SNAPSHOT; release:perform builds the tag and publishes it
+# to Exchange. The version is exposed as an output for the deployment stages.
+parameters:
+- name: pool
+  type: object
+  default: { vmImage: ubuntu-latest }
+- name: nextVersionBump
+  type: string
+  default: minor
+  values: [patch, minor, major]
+
+jobs:
+- job: release
+  displayName: Maven release
+  pool: ${{ parameters.pool }}
+  steps:
+  # The pipeline token must be kept so that release:prepare can push commits and the tag.
+  - checkout: self
+    persistCredentials: true
+    fetchDepth: 0
+  - template: ../steps/setup-maven.yml
+  - bash: |
+      set -euo pipefail
+      # Pipelines check out a commit (detached HEAD); the release plugin needs a branch.
+      branch="${BUILD_SOURCEBRANCH#refs/heads/}"
+      git switch -C "$branch" "origin/$branch"
+      git config user.name "Azure Pipelines"
+      git config user.email "azure-pipelines@users.noreply.github.com"
+
+      current=$(mvn $(MAVEN_ARGS) -q help:evaluate -Dexpression=project.version -DforceStdout)
+      release="${current%-SNAPSHOT}"
+      IFS=. read -r major minor patch <<< "$release"
+      case "$BUMP" in
+        major) next="$((major + 1)).0.0" ;;
+        minor) next="${major}.$((minor + 1)).0" ;;
+        patch) next="${major}.${minor}.$((patch + 1))" ;;
+      esac
+      echo "Releasing $release; main moves to $next-SNAPSHOT"
+
+      mvn $(MAVEN_ARGS) release:prepare release:perform \
+        -DreleaseVersion="$release" \
+        -DdevelopmentVersion="$next-SNAPSHOT" \
+        -Darguments="-DskipMunitTests -s $(MAVEN_SETTINGS) -Danypoint.orgId=$(ANYPOINT_ORG_ID)"
+
+      echo "##vso[task.setvariable variable=appVersion;isOutput=true]$release"
+      echo "##vso[build.addbuildtag]v$release"
+    name: release
+    displayName: release:prepare release:perform
+    env:
+      BUMP: ${{ parameters.nextVersionBump }}

@@ -1,0 +1,86 @@
+# Entry point for Mule applications. The branch decides what runs:
+#
+#   pull requests, feature/*, release/*, hotfix/*  -> build
+#   develop                                        -> build, publish SNAPSHOT, deploy to test
+#   main                                           -> build, Maven release, deploy to uat, deploy to prod (approval)
+#
+# Applications consume it with `extends:` (see the README).
+parameters:
+- name: variableGroup
+  type: string
+  default: vg-00-anypoint-platform
+- name: nextVersionBump
+  type: string
+  default: minor
+- name: environments
+  type: object
+  default:
+    test: test
+    uat: uat
+    prod: prod
+
+variables:
+- group: ${{ parameters.variableGroup }}
+
+stages:
+- stage: ci
+  displayName: Build
+  jobs:
+  - template: ../jobs/ci.yml
+
+# develop ---------------------------------------------------------------
+- stage: snapshot
+  displayName: Publish SNAPSHOT
+  dependsOn: ci
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), ne(variables['Build.Reason'], 'PullRequest'))
+  jobs:
+  - template: ../jobs/publish-snapshot.yml
+
+- stage: deploy_test
+  displayName: Deploy test
+  dependsOn: snapshot
+  condition: succeeded()
+  variables:
+    appVersion: $[ stageDependencies.snapshot.publish.outputs['publish.appVersion'] ]
+  jobs:
+  - template: ../jobs/deploy.yml
+    parameters:
+      environment: ${{ parameters.environments.test }}
+      anypointEnvironment: test
+      appVersion: $(appVersion)
+
+# main ------------------------------------------------------------------
+- stage: release
+  displayName: Release
+  dependsOn: ci
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.Reason'], 'PullRequest'))
+  jobs:
+  - template: ../jobs/release.yml
+    parameters:
+      nextVersionBump: ${{ parameters.nextVersionBump }}
+
+- stage: deploy_uat
+  displayName: Deploy uat
+  dependsOn: release
+  condition: succeeded()
+  variables:
+    appVersion: $[ stageDependencies.release.release.outputs['release.appVersion'] ]
+  jobs:
+  - template: ../jobs/deploy.yml
+    parameters:
+      environment: ${{ parameters.environments.uat }}
+      anypointEnvironment: uat
+      appVersion: $(appVersion)
+
+- stage: deploy_prod
+  displayName: Deploy prod
+  dependsOn: [release, deploy_uat]
+  condition: succeeded()
+  variables:
+    appVersion: $[ stageDependencies.release.release.outputs['release.appVersion'] ]
+  jobs:
+  - template: ../jobs/deploy.yml
+    parameters:
+      environment: ${{ parameters.environments.prod }}
+      anypointEnvironment: prod
+      appVersion: $(appVersion)

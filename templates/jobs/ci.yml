@@ -1,0 +1,25 @@
+# Build and package. MUnit is skipped on purpose: it needs the MuleSoft Enterprise
+# repository, which requires customer credentials (see docs/adr/0004).
+parameters:
+- name: pool
+  type: object
+  default: { vmImage: ubuntu-latest }
+
+jobs:
+- job: ci
+  displayName: Build and package
+  pool: ${{ parameters.pool }}
+  steps:
+  - checkout: self
+  - template: ../steps/setup-maven.yml
+  - bash: mvn $(MAVEN_ARGS) clean package -DskipMunitTests
+    displayName: mvn package
+  - task: CopyFiles@2
+    displayName: Collect package
+    inputs:
+      contents: target/*.jar
+      targetFolder: $(Build.ArtifactStagingDirectory)
+      flattenFolders: true
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: mule-application
+    displayName: Publish pipeline artifact

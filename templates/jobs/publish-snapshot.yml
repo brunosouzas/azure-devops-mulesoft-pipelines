@@ -1,0 +1,21 @@
+# develop: publish the current -SNAPSHOT to Anypoint Exchange.
+parameters:
+- name: pool
+  type: object
+  default: { vmImage: ubuntu-latest }
+
+jobs:
+- job: publish
+  displayName: Publish SNAPSHOT to Exchange
+  pool: ${{ parameters.pool }}
+  steps:
+  - checkout: self
+  - template: ../steps/setup-maven.yml
+  - bash: |
+      set -euo pipefail
+      version=$(mvn $(MAVEN_ARGS) -q help:evaluate -Dexpression=project.version -DforceStdout)
+      [[ "$version" == *-SNAPSHOT ]] || { echo "develop must carry a -SNAPSHOT version, found $version" >&2; exit 1; }
+      mvn $(MAVEN_ARGS) clean deploy -DskipMunitTests
+      echo "##vso[task.setvariable variable=appVersion;isOutput=true]$version"
+    name: publish
+    displayName: mvn deploy (SNAPSHOT)
