@@ -53,6 +53,19 @@ The application needs:
 
 The reference application has all of them.
 
+### Plugins and libraries
+
+A Mule plugin or library (`packaging=mule-extension`/`mule-library`) has nothing to deploy to CloudHub 2.0 — pass `deploy: false` to skip straight from build to publishing on Exchange:
+
+```yaml
+extends:
+  template: templates/stages/gitflow.yml@templates
+  parameters:
+    deploy: false
+```
+
+It still needs `groupId`, `distributionManagement` and the `maven-release-plugin` block above; it does not need `cloudhub2Deployment` or `deployment/<env>.yaml`. See [ADR 7](docs/adr/0007-plugin-library-pipeline-variant.md). The reference is [mule4-circuit-breaker](https://github.com/brunosouzas/mule4-circuit-breaker).
+
 ## Azure DevOps setup
 
 | Item | Name | Contents |
@@ -71,6 +84,7 @@ For the release job to push its commits and tag, the pipeline identity must be a
 4. [MUnit does not run in the public pipeline](docs/adr/0004-munit-not-in-public-ci.md)
 5. [Build once, deploy the same artifact everywhere](docs/adr/0005-build-once-deploy-from-exchange.md)
 6. [Approvals live on Azure DevOps environments](docs/adr/0006-approvals-on-environments.md)
+7. [A `deploy` parameter, not a separate entry point, for plugins and libraries](docs/adr/0007-plugin-library-pipeline-variant.md)
 
 ## Versioning of this repository
 

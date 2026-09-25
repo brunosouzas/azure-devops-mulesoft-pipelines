@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- `gitflow.yml`: new `deploy` parameter (default `true`). With `deploy: false`, `deploy_test`/`deploy_uat`/`deploy_prod` are compiled out entirely, for plugins and libraries that only publish to Exchange (see ADR 7).
+
 ## 1.1.0
 
 - Deploy job: smoke test after each deployment. Calls `healthUrl` from `deployment/<env>.yaml` and fails unless it reports `status: UP` for the expected environment (retries for up to five minutes).
