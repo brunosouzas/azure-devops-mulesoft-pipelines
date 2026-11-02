@@ -4,7 +4,7 @@
 parameters:
 - name: pool
   type: object
-  default: { vmImage: ubuntu-latest }
+  default: { vmImage: ubuntu-24.04 }
 - name: nextVersionBump
   type: string
   default: minor

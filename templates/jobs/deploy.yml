@@ -3,7 +3,7 @@
 parameters:
 - name: pool
   type: object
-  default: { vmImage: ubuntu-latest }
+  default: { vmImage: ubuntu-24.04 }
 - name: environment        # Azure DevOps environment (approvals live here)
   type: string
 - name: anypointEnvironment

@@ -2,7 +2,7 @@
 parameters:
 - name: pool
   type: object
-  default: { vmImage: ubuntu-latest }
+  default: { vmImage: ubuntu-24.04 }
 
 jobs:
 - job: publish

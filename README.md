@@ -23,7 +23,7 @@ templates/
   jobs/publish-snapshot.yml  develop → Exchange
   jobs/release.yml           release:prepare release:perform on main
   jobs/deploy.yml            deploy a version from Exchange to CloudHub 2.0
-  steps/setup-maven.yml      Java 17, Maven cache, settings.xml from secrets
+  steps/setup-maven.yml      Java 17, Maven 3.9.11 (pinned), Maven cache, settings.xml from secrets
 docs/adr/                    why the templates work this way
 ```
 
