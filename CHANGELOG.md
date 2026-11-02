@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- `setup-maven.yml`: Apache Maven 3.9.11 pinned (SHA-512 checked); the hosted image's Maven 3.10 broke mule-maven-plugin 4.9.1 and mule-extensions-maven-plugin 1.9.6 (NoSuchMethodError).
+- Jobs: default pool `ubuntu-24.04` instead of `ubuntu-latest`, so the image (and its Java 17) no longer moves under the pipelines.
+
 ## 1.2.0
 
 - `gitflow.yml`: new `deploy` parameter (default `true`). With `deploy: false`, `deploy_test`/`deploy_uat`/`deploy_prod` are compiled out entirely, for plugins and libraries that only publish to Exchange (see ADR 7).
