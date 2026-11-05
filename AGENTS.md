@@ -10,7 +10,7 @@ Stack: Azure Pipelines, Maven, Mule 4, CloudHub 2.0
 Delivery: E reference
 Integration branch: `main`
 Data: none
-Article: `50-writing/mulesoft-delivery-azure-devops/`
+Article: `brunosouzas-content: writing/mulesoft-delivery-azure-devops/`
 
 - Build: `not applicable: templates only; they run inside a consumer's pipeline (mulesoft-orders-api, mule4-circuit-breaker, mule4-circuit-breaker-demo-app)`
 - Test: `not applicable: no test suite in this repository; a template change is tested by pointing a consumer's resources.repositories ref at the branch and running its pipeline`
