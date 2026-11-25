@@ -36,7 +36,7 @@ resources:
     type: github
     endpoint: <your GitHub service connection>
     name: brunosouzas/azure-devops-mulesoft-pipelines
-    ref: refs/tags/v1.1.0
+    ref: refs/tags/v1.2.1
 
 extends:
   template: templates/stages/gitflow.yml@templates
@@ -72,9 +72,15 @@ It still needs `groupId`, `distributionManagement` and the `maven-release-plugin
 |---|---|---|
 | Variable group | `vg-00-anypoint-platform` | `ANYPOINT_ORG_ID`, `ANYPOINT_CLIENT_ID`, `ANYPOINT_CLIENT_SECRET` (secret) — a Connected App with Exchange Contributor and Runtime Manager deploy scopes |
 | Environments | `test`, `uat`, `prod` | `prod` with an **Approvals** check |
-| Service connection | GitHub | used to read this repository and to check out the application |
+| Service connection | GitHub, by the **Azure Pipelines GitHub App** (no OAuth) | used to read this repository and to check out the application; authorize it for each pipeline, not for all. Its name must match `endpoint:` in the application's `azure-pipelines.yml` (`github.com_brunosouzas` in the reference applications) |
 
 For the release job to push its commits and tag, the pipeline identity must be allowed to push to `main` (see [ADR 3](docs/adr/0003-release-push-identity.md)).
+
+Azure DevOps no longer allows public projects, so the reference project is private: its hosted jobs draw on the organization's free private grant (one job, 1,800 minutes a month).
+
+### Running an application tag pinned to an older template
+
+Template tags before `v1.2.1` use the Maven of the hosted image. Since November 2026 that is Maven 3.10, which breaks mule-maven-plugin 4.9.1 and mule-extensions-maven-plugin 1.9.6 (`NoSuchMethodError` on `DefaultMirrorSelector.add`). To build an application tag that pins one of them (for example `mulesoft-orders-api` `v1.0.0`, which pins `v1.0.1`), queue it by hand and, under **Resources**, set the `templates` repository to `refs/tags/v1.2.1`. The application tag stays as it is; a run on a tag only builds (no SNAPSHOT, release or deployment).
 
 ## Decisions
 
@@ -88,7 +94,7 @@ For the release job to push its commits and tag, the pipeline identity must be a
 
 ## Versioning of this repository
 
-Templates are released with tags (`v1.0.0`, `v1.1.0`, …). Applications pin a tag, so a change here never alters an application's pipeline until that application chooses to upgrade.
+Templates are released with tags (`v1.0.0`, `v1.1.0`, `v1.2.1`, …). Applications pin a tag, so a change here never alters an application's pipeline until that application chooses to upgrade.
 
 ## Licence
 
