@@ -36,6 +36,6 @@ GitHub default branch inspected on 2026-10-06: `main`. Release bases are defined
 Before planning, reviewing or changing this project, read [the applicable project rules](rules/README.md).
 
 - Article repository: this repository was made for a published article and keeps what the article published (its code, branches and pipeline). A change here changes the article, so every merge is Bruno's (level 2), also under a delegation.
-- Board area: `mulesoft` (Azure Boards, project `brunosouzas`).
+- Tracker: Linear brunosouzas, team SW, label `mulesoft`.
 - OpenSpec: no: every change takes the small path.
 - Versions of this repository are tags (`vX.Y.Z`) that Bruno creates; never create, move or delete one.
